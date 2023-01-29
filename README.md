@@ -1,8 +1,9 @@
 # ECSM
 
-This project is under development,
-A proof of concept: [Ecsm-py](https://github.com/9elt/Ecsm-py)
+> This project is under development,
+a proof of concept: [Ecsm-py](https://github.com/9elt/Ecsm-py)
 
+A tool to easily manage state in html and css only websites
 
 ### html
 
