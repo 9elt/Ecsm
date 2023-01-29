@@ -1,21 +1,18 @@
 use crate::{config::ECSMConfig, parser::ECSMParser};
-use std::fs;
+use std::ffi::OsStr;
 use std::io::Result;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-struct Files {
-    html: Vec<PathBuf>,
-    css: Vec<PathBuf>,
-}
-
 struct BooleanState {
     name: String,
+    files: Vec<PathBuf>
 }
 
 struct SelectionState {
     name: String,
     keys: Vec<String>,
+    files: Vec<PathBuf>
 }
 
 struct States {
@@ -26,7 +23,6 @@ struct States {
 pub struct ECSMCompiler {
     config: ECSMConfig,
     parser: ECSMParser,
-    files: Files,
     states: States,
 }
 
@@ -35,19 +31,15 @@ impl ECSMCompiler {
         let mut compiler = Self {
             config: config.to_owned(),
             parser: ECSMParser::new(),
-            files: Files {
-                html: vec![],
-                css: vec![],
-            },
             states: States {
                 boolean: vec![],
                 selection: vec![],
             },
         };
 
-        match compiler.get_source_files() {
+        match compiler.compile_source_files() {
             Ok(_) => (),
-            Err(err) => println!("error finding source files {:?}", err),
+            Err(err) => println!("error compiling source files {:?}", err),
         }
 
         compiler
@@ -57,28 +49,44 @@ impl ECSMCompiler {
         &self.config
     }
 
-    pub fn get_source_files(&mut self) -> Result<()> {
-        self.get_files(&self.config.source_path()?)
+    pub fn compile_source_files(&mut self) -> Result<()> {
+        self.compile_files_in(&self.config.source_path()?)
     }
 
-    pub fn get_files(&mut self, dir_path: &PathBuf) -> Result<()> {
+    pub fn compile_files_in(&mut self, dir_path: &PathBuf) -> Result<()> {
         let walker = WalkDir::new(dir_path);
 
         for entry in walker.into_iter().filter_map(|e| e.ok()) {
-            if entry.path().is_dir() {
-                continue;
-            }
-
-            match entry.path().extension() {
-                Some(ext) => match ext.to_str() {
-                    Some("html") => self.files.html.push(entry.path().to_path_buf()),
-                    Some("css") => self.files.css.push(entry.path().to_path_buf()),
-                    _ => continue,
-                },
-                None => continue,
-            }
+            self.compile_file(entry.path().to_path_buf()).ok();
         }
 
         Ok(())
+    }
+
+    pub fn compile_file(&mut self, path: PathBuf) -> Result<()> {
+        match path.extension() {
+            Some(ext) => match ext.to_str() {
+                Some("html") => self.compile_html(path),
+                Some("css") => self.compile_css(path),
+                _ => (),
+            },
+            None => (),
+        };
+
+        Ok(())
+    }
+
+    fn compile_html(&mut self, path: PathBuf) {
+        println!(
+            "[compiling html] -> {:?}",
+            path.file_name().unwrap_or(OsStr::new("missing filename"))
+        )
+    }
+
+    fn compile_css(&mut self, path: PathBuf) {
+        println!(
+            "[compiling css] -> {:?}",
+            path.file_name().unwrap_or(OsStr::new("missing filename"))
+        )
     }
 }

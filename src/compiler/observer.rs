@@ -3,7 +3,7 @@ use notify::{RecursiveMode, Result};
 use notify_debouncer_mini::{new_debouncer, DebouncedEvent};
 use std::time::Duration;
 
-pub fn watch(compiler: &ECSMCompiler) -> Result<()> {
+pub fn watch(compiler: &mut ECSMCompiler) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel();
 
     let mut debouncer = new_debouncer(Duration::from_millis(500), None, tx).unwrap();
@@ -14,7 +14,7 @@ pub fn watch(compiler: &ECSMCompiler) -> Result<()> {
 
     for res in rx {
         match res {
-            Ok(event) => observer_router(event),
+            Ok(event) => observer_router(event, compiler),
             Err(e) => println!("watch error: {:?}", e),
         }
     }
@@ -22,15 +22,8 @@ pub fn watch(compiler: &ECSMCompiler) -> Result<()> {
     Ok(())
 }
 
-fn observer_router(events: Vec<DebouncedEvent>) {
+fn observer_router(events: Vec<DebouncedEvent>, compiler: &mut ECSMCompiler) {
     for event in events {
-        let name = match event.path.file_name() {
-            Some(name) => match name.to_str() {
-                Some(name) => name,
-                None => "", // directry check
-            },
-            None => "",
-        };
 
         if !event.path.exists() {
             // file or dir was deleted
@@ -38,19 +31,9 @@ fn observer_router(events: Vec<DebouncedEvent>) {
             continue;
         }
 
-        let ext = match event.path.extension() {
-            Some(ext) => ext.to_str(),
-            None => match event.path.is_dir() {
-                true => Some("dir"),
-                false => None,
-            },
-        };
-
-        match ext {
-            Some("html") => println!("compiling [html] -> {}", name),
-            Some("css") => println!("compiling [css] -> {}", name),
-            Some("dir") => println!("compiling [dir] -> {}", name),
-            _ => (),
-        }
+        match event.path.is_dir() {
+            true => compiler.compile_files_in(&event.path),
+            false => compiler.compile_file(event.path),
+        }.ok();
     }
 }
