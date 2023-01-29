@@ -83,7 +83,10 @@ impl ECSMConfig {
     }
 
     pub fn new() -> Result<Self> {
-        println!("\ncreate a new project | name:");
+        print!("\ncreate a new project | \x1b[33m\x1b[1mname\x1b[0m: ");
+
+        io::Write::flush(&mut io::stdout()).ok();
+        io::stdout().flush().ok();
 
         let mut name = String::new();
         io::stdin().read_line(&mut name)?;

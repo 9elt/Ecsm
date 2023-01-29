@@ -6,7 +6,7 @@ use compiler::ECSMCompiler;
 use std::io::Result;
 
 pub fn start(config: &ECSMConfig) -> Result<()> {
-    println!("starting [{}] autocompiler", config.name());
+    println!("\nstarting \x1b[33m\x1b[1m[{}]\x1b[0m autocompiler\n", config.name());
 
     let mut compiler = ECSMCompiler::new(config);
 

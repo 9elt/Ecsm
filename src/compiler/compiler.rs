@@ -78,17 +78,23 @@ impl ECSMCompiler {
     }
 
     fn compile_html(&mut self, path: PathBuf) {
-        println!(
-            "[compiling html] -> {:?}",
+        print!(
+            "\x1b[33m\x1b[1mcompiling\x1b[0m -> \x1b[1m{:?}\x1b[0m",
             path.file_name().unwrap_or(OsStr::new("missing filename"))
-        )
+        );
+
+        print!(" \x1b[32m\x1b[1mdone\x1b[0m\n");
+        // print!(" \x1b[31m\x1b[1merror\x1b[0m\n");
     }
 
     fn compile_css(&mut self, path: PathBuf) {
-        println!(
-            "[compiling css] -> {:?}",
+        print!(
+            "\x1b[33m\x1b[1mcompiling\x1b[0m -> \x1b[1m{:?}\x1b[0m",
             path.file_name().unwrap_or(OsStr::new("missing filename"))
-        )
+        );
+
+        print!(" \x1b[32m\x1b[1mdone\x1b[0m\n");
+        //print!(" \x1b[31m\x1b[1merror\x1b[0m\n");
     }
 
     fn source_path_to_output(&mut self, path: PathBuf) -> PathBuf {
