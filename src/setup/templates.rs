@@ -1,4 +1,4 @@
-use crate::utils::config::ECSMConfig;
+use crate::config::ECSMConfig;
 
 pub fn html_template(config: &ECSMConfig) -> String {
     format!(

@@ -2,10 +2,12 @@ mod compiler;
 mod parser;
 mod setup;
 mod utils;
+mod config;
 
-use utils::config::ECSMConfig;
+use config::ECSMConfig;
 
 fn main() {
+    // load config
     let config = match ECSMConfig::parse() {
         Ok(conf) => conf,
         Err(_) => match ECSMConfig::new() {
@@ -17,11 +19,15 @@ fn main() {
         },
     };
 
+    // check directories
     match config.check_directories() {
         Ok(_) => (),
         Err(err) => panic!("direcotries check failed: {:?}", err),
-    }
+    };
 
-    let m = compiler::start(&config);
-    println!("{:?}", m);
+    // start auto compiler
+    match compiler::start(&config) {
+        Ok(_) => (),
+        Err(err) => panic!("failed starting compiler: {:?}", err), 
+    };
 }

@@ -1,16 +1,16 @@
 mod observer;
+mod compiler;
 
-use crate::utils::config::ECSMConfig;
+use crate::config::ECSMConfig;
+use compiler::ECSMCompiler;
 use std::io::Result;
 
 pub fn start(config: &ECSMConfig) -> Result<()> {
     println!("starting [{}] autocompiler", config.name());
 
-    let source_path = config.source_path()?;
+    let compiler = ECSMCompiler::new(config);
 
-    let observer = observer::watch(&source_path);
-
-    match observer {
+    match observer::watch(&compiler) {
         Ok(_) => println!("observer stopped..."),
         Err(err) => println!("error starting autocompiler: {:?}", err),
     };

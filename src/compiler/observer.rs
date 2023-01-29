@@ -1,14 +1,14 @@
 use notify::{RecursiveMode, Result};
 use notify_debouncer_mini::{new_debouncer, DebouncedEvent};
-use std::path::Path;
 use std::time::Duration;
+use super::compiler::ECSMCompiler;
 
-pub fn watch(path: &Path) -> Result<()> {
+pub fn watch(compiler: &ECSMCompiler) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel();
 
     let mut debouncer = new_debouncer(Duration::from_millis(500), None, tx).unwrap();
 
-    debouncer.watcher().watch(path, RecursiveMode::Recursive)?;
+    debouncer.watcher().watch(&compiler.config().source_path()?, RecursiveMode::Recursive)?;
 
     for res in rx {
         match res {

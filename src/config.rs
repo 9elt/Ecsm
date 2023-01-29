@@ -6,13 +6,13 @@ use std::path::PathBuf;
 
 const CONFIG_NAME: &str = "ecsm.config.json";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Directories {
     source: String,
     output: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ECSMConfig {
     name: String,
     dir: Directories,

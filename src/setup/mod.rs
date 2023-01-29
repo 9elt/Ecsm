@@ -1,6 +1,6 @@
 mod templates;
 
-use crate::utils::config::ECSMConfig;
+use crate::config::ECSMConfig;
 use std::fs;
 use std::io::Result;
 
