@@ -13,7 +13,7 @@ pub fn start(config: &ECSMConfig) -> Result<()> {
     let observer = observer::watch(&source_dir);
 
     match observer {
-        Ok(_) => println!("autocompiler stopped"),
+        Ok(_) => println!("observer stopped..."),
         Err(err) => println!("error starting autocompiler: {:?}", err),
     };
 

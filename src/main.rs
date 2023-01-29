@@ -17,6 +17,8 @@ fn main() {
         },
     };
 
+    println!("config loaded");
+
     let m = compiler::start(&config);
     println!("{:?}", m);
 }

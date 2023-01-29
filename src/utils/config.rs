@@ -33,10 +33,12 @@ impl ECSMConfig {
     }
 
     pub fn new() -> Result<Self> {
-        println!("\ncreate a new project | name: ");
+        println!("\ncreate a new project | name:");
 
         let mut name = String::new();
         io::stdin().read_line(&mut name)?;
+
+        name = name.trim().to_string();
 
         let path = current_dir()?.join(CONFIG_NAME);
 
@@ -45,7 +47,7 @@ impl ECSMConfig {
             source_dir: "src".to_string(),
         };
 
-        let json_config = serde_json::to_string(&config)?;
+        let json_config = serde_json::to_string_pretty(&config)?;
 
         std::fs::write(path, json_config)?;
 
