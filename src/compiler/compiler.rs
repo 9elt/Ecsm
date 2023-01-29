@@ -1,18 +1,19 @@
 use crate::{config::ECSMConfig, parser::ECSMParser};
 use std::ffi::OsStr;
+use std::fs;
 use std::io::Result;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
 struct BooleanState {
     name: String,
-    files: Vec<PathBuf>
+    files: Vec<PathBuf>,
 }
 
 struct SelectionState {
     name: String,
     keys: Vec<String>,
-    files: Vec<PathBuf>
+    files: Vec<PathBuf>,
 }
 
 struct States {
@@ -88,5 +89,23 @@ impl ECSMCompiler {
             "[compiling css] -> {:?}",
             path.file_name().unwrap_or(OsStr::new("missing filename"))
         )
+    }
+
+    fn source_path_to_output(&mut self, path: PathBuf) -> PathBuf {
+        PathBuf::from(
+            path.to_str()
+                .unwrap_or("none")
+                .replace(self.config.source_dir(), self.config.output_dir()),
+        )
+    }
+
+    pub fn remove_file(&mut self, path: PathBuf) -> Result<()> {
+        fs::remove_file(self.source_path_to_output(path))
+        // remove connected states... to do...
+    }
+
+    pub fn remove_dir(&mut self, path: PathBuf) -> Result<()> {
+        fs::remove_dir_all(self.source_path_to_output(path))
+        // remove connected states... to do...
     }
 }

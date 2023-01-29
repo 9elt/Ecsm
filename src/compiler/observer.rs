@@ -26,8 +26,10 @@ fn observer_router(events: Vec<DebouncedEvent>, compiler: &mut ECSMCompiler) {
     for event in events {
 
         if !event.path.exists() {
-            // file or dir was deleted
-            // when a html file is deleted, recompile all css
+            match event.path.is_dir() {
+                true => compiler.remove_dir(event.path),
+                false => compiler.remove_file(event.path),
+            }.ok();
             continue;
         }
 

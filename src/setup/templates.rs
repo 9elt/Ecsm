@@ -24,7 +24,7 @@ pub fn html_template(config: &ECSMConfig) -> String {
 
     <h1 handle_state=\"state_name\">click here</h1>
 
-    option state usage:
+    selection state usage:
 
     <h1 handle_state=\"otp_state_name:key_name\">click here</h1>
     <h1 handle_state=\"otp_state_name:second_key_name\">click here</h1>
@@ -53,9 +53,9 @@ state_name:active .targeted_class {{
     ...css style
 }}
 
-option states usage:
+selection states usage:
 
-otp_state_name:key_name .targeted_class {{
+sel_state_name:key_name .targeted_class {{
     ...css style
 }}
 
