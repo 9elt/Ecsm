@@ -1,14 +1,21 @@
 use serde::{Deserialize, Serialize};
 use std::env::current_dir;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, prelude::*, Result};
+use std::path::PathBuf;
 
 const CONFIG_NAME: &str = "ecsm.config.json";
 
 #[derive(Serialize, Deserialize)]
+struct Directories {
+    source: String,
+    output: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct ECSMConfig {
     name: String,
-    source_dir: String,
+    dir: Directories,
 }
 
 impl ECSMConfig {
@@ -17,7 +24,35 @@ impl ECSMConfig {
     }
 
     pub fn source_dir(&self) -> &String {
-        &self.source_dir
+        &self.dir.source
+    }
+
+    pub fn output_dir(&self) -> &String {
+        &self.dir.output
+    }
+
+    pub fn source_path(&self) -> Result<PathBuf> {
+        Ok(current_dir()?.join(self.source_dir()))
+    }
+
+    pub fn output_path(&self) -> Result<PathBuf> {
+        Ok(current_dir()?.join(self.output_dir()))
+    }
+
+    pub fn check_directories(&self) -> Result<()> {
+        let source_path = self.source_path()?;
+
+        if !source_path.exists() {
+            fs::create_dir(source_path)?;
+        }
+
+        let output_path = self.output_path()?;
+
+        if !output_path.exists() {
+            fs::create_dir(output_path)?;
+        }
+
+        Ok(())
     }
 
     pub fn parse() -> Result<Self> {
@@ -44,12 +79,15 @@ impl ECSMConfig {
 
         let config = Self {
             name,
-            source_dir: "src".to_string(),
+            dir: Directories {
+                source: "src".to_string(),
+                output: ".output".to_string(),
+            },
         };
 
         let json_config = serde_json::to_string_pretty(&config)?;
 
-        std::fs::write(path, json_config)?;
+        fs::write(path, json_config)?;
 
         Ok(config)
     }
