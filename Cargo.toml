@@ -1,0 +1,16 @@
+[package]
+name = "ecsm"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+notify = "5.1.0"
+
+html_editor = "0.5.2"
+
+serde_json = "1.0.91"
+serde = { version = "1.0.152", features = ["derive"] }
+serde_derive = "1.0.152"
