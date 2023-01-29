@@ -10,6 +10,7 @@ const CONFIG_NAME: &str = "ecsm.config.json";
 struct Directories {
     source: String,
     output: String,
+    media: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -31,12 +32,20 @@ impl ECSMConfig {
         &self.dir.output
     }
 
+    pub fn media_dir(&self) -> &String {
+        &self.dir.media
+    }
+
     pub fn source_path(&self) -> Result<PathBuf> {
         Ok(current_dir()?.join(self.source_dir()))
     }
 
     pub fn output_path(&self) -> Result<PathBuf> {
         Ok(current_dir()?.join(self.output_dir()))
+    }
+
+    pub fn media_path(&self) -> Result<PathBuf> {
+        Ok(current_dir()?.join(self.media_dir()))
     }
 
     pub fn check_directories(&self) -> Result<()> {
@@ -50,6 +59,12 @@ impl ECSMConfig {
 
         if !output_path.exists() {
             fs::create_dir(output_path)?;
+        }
+
+        let media_path = self.media_path()?;
+
+        if !media_path.exists() {
+            fs::create_dir(media_path)?;
         }
 
         Ok(())
@@ -82,6 +97,7 @@ impl ECSMConfig {
             dir: Directories {
                 source: "src".to_string(),
                 output: ".output".to_string(),
+                media: "public".to_string(),
             },
         };
 
