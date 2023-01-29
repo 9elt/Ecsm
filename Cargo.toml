@@ -9,6 +9,7 @@ edition = "2021"
 
 notify = "5.1.0"
 notify-debouncer-mini = "0.2.1"
+walkdir = "2.3.2"
 
 html_editor = "0.5.2"
 
