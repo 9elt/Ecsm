@@ -38,10 +38,7 @@ impl ECSMCompiler {
             },
         };
 
-        match compiler.compile_source_files() {
-            Ok(_) => (),
-            Err(err) => println!("error compiling source files {:?}", err),
-        }
+        compiler.compile_source_files().ok();
 
         compiler
     }
@@ -82,6 +79,8 @@ impl ECSMCompiler {
             "\x1b[33m\x1b[1mcompiling\x1b[0m -> \x1b[1m{:?}\x1b[0m",
             path.file_name().unwrap_or(OsStr::new("missing filename"))
         );
+
+        self.parser.parse_html(&path).ok();
 
         print!(" \x1b[32m\x1b[1mdone\x1b[0m\n");
         // print!(" \x1b[31m\x1b[1merror\x1b[0m\n");
