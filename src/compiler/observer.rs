@@ -6,7 +6,7 @@ use std::time::Duration;
 pub fn watch(compiler: &mut ECSMCompiler) -> Result<()> {
     let (tx, rx) = std::sync::mpsc::channel();
 
-    let mut debouncer = new_debouncer(Duration::from_millis(500), None, tx).unwrap();
+    let mut debouncer = new_debouncer(Duration::from_millis(300), None, tx).unwrap();
 
     debouncer
         .watcher()
