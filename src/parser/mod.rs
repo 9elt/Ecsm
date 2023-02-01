@@ -74,10 +74,14 @@ impl ECSMParser {
         format!("ECSM-selection-ID-{state_name}-KEY-{state_key}")
     }
 
+    fn reserved_key_error(&self, state_name: &str, state_key: &str) -> String {
+        format!("reserved keyword \"{state_key}\" ~ {STATE_ATTR}=\"{state_name}:{state_key}\"")
+    }
+
     fn parse_state(&mut self, dom: &NodeRef) -> Result<u16, String> {
         let parsed_states = match dom.select(STATE_ATTR_SELECTOR) {
             Ok(parsed) => parsed,
-            Err(_) => return Err("no states".to_string()),
+            Err(_) => return Ok(0),
         };
 
         let mut errors= "".to_string();
@@ -105,7 +109,8 @@ impl ECSMParser {
             };
 
             if RESERVED_KEYS.contains(&state_key) {
-                errors = format!("reserved key \"{state_key}\" used by \"{state_name}\"");
+                errors = self.reserved_key_error(state_name, state_key);
+                continue;
             }
 
             let _is_default = state_key == SELECTION_DEFAULT_KEY;
@@ -176,9 +181,6 @@ impl ECSMParser {
             return Err(errors);
         }
 
-        match attr_values.len() {
-            0 => Err("no states".to_string()),
-            _ => Ok(attr_values.len() as u16),
-        }
+        Ok(attr_values.len() as u16)
     }
 }
