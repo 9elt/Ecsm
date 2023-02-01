@@ -110,6 +110,7 @@ dependencies = [
 name = "ecsm"
 version = "0.1.0"
 dependencies = [
+ "html5ever",
  "kuchiki",
  "notify",
  "notify-debouncer-mini",
