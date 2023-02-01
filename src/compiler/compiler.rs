@@ -80,9 +80,11 @@ impl ECSMCompiler {
             path.file_name().unwrap_or(OsStr::new("missing filename"))
         );
 
-        self.parser.parse_html(&path).ok();
-
-        print!(" \x1b[32m\x1b[1mdone\x1b[0m\n");
+        self.parser.reset();
+        match self.parser.parse_html(&path) {
+            Ok(()) => print!(" \x1b[32m\x1b[1mdone\x1b[0m\n"),
+            Err(err) => print!(" \x1b[31m\x1b[1m{err}\x1b[0m\n"),
+        };
         // print!(" \x1b[31m\x1b[1merror\x1b[0m\n");
     }
 
