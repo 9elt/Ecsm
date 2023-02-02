@@ -1,61 +1,35 @@
+mod consts;
+mod states;
+mod utils;
+
+use consts::*;
+use states::{BooleanState, SelectionState};
+
 use kuchiki::traits::TendrilSink;
-use kuchiki::{parse_html, NodeRef};
-use std::borrow::BorrowMut;
-use std::fs::File;
-use std::io::Read;
-use std::path::PathBuf;
-
-use html5ever::{interface::QualName, namespace_url, ns, LocalName};
-use kuchiki::{Attribute, ExpandedName};
-
-const STATE_CLASS: &str = "ECSM-state";
-const BOOLEAN_STATE_TYPE: &str = "checkbox";
-const SELECTION_STATE_TYPE: &str = "radio";
-
-const STATE_HANDLER_CLASS: &str = "ECSM-state-handler";
-
-const STATE_ATTR: &str = "handle_state";
-const STATE_ATTR_SELECTOR: &str = "[handle_state]";
-
-const SELECTION_SEPARATOR: &str = ":";
-const SELECTION_DEFAULT_KEY: &str = "default";
-const RESERVED_KEYS: [&str; 1] = ["active"];
+use kuchiki::{parse_html, ExpandedName, NodeRef};
+use std::{borrow::BorrowMut, fs::File, io::Read, path::PathBuf};
 
 #[derive(Debug, Clone)]
-pub struct BooleanState {
-    name: String,
+pub struct ECSMHtmlEditor {
+    pub boolean: Vec<BooleanState>,
+    pub selection: Vec<SelectionState>,
+    pub current: Option<NodeRef>,
 }
 
-#[derive(Debug, Clone)]
-pub struct SelectionState {
-    name: String,
-    keys: Vec<String>,
-}
-
-pub struct ECSMParser {
-    boolean: Vec<BooleanState>,
-    selection: Vec<SelectionState>,
-    current: Option<NodeRef>,
-}
-
-impl ECSMParser {
+impl ECSMHtmlEditor {
     pub fn new() -> Self {
         Self {
             boolean: vec![],
             selection: vec![],
-            current: None
+            current: None,
         }
-    }
-
-    pub fn current(&self) -> Option<NodeRef> {
-        self.current.to_owned()
     }
 
     pub fn reset(&mut self) {
         *self = Self::new()
     }
 
-    pub fn parse_html(&mut self, path: &PathBuf) -> Result<(), String> {
+    pub fn compile(&mut self, path: &PathBuf) -> Result<(), String> {
         let mut html_file = match File::open(path) {
             Ok(file) => file,
             Err(_) => return Err("failed opening".to_string()),
@@ -85,44 +59,8 @@ impl ECSMParser {
 
         match parser_errors == "" {
             true => Ok(()),
-            false => Err(parser_errors)
+            false => Err(parser_errors),
         }
-
-        // let _states = self.borrow_mut().parse_state_hanlders(&dom);
-        // let _insert = self.borrow_mut().insert_state_inputs(&dom);
-        // // println!("\nstates -> {:?}", self.selection);
-        // println!("\nhtml ->\n{}\n", dom.to_string());
-        // Ok(())
-    }
-
-    fn boolean_state_id(&self, state_name: &str) -> String {
-        format!("ECSM-boolean-ID-{state_name}")
-    }
-
-    fn selection_state_id(&self, state_name: &str, state_key: &str) -> String {
-        format!("ECSM-selection-ID-{state_name}-KEY-{state_key}")
-    }
-
-    fn reserved_key_error(&self, state_name: &str, state_key: &str) -> String {
-        format!("reserved keyword \"{state_key}\" ~ {STATE_ATTR}=\"{state_name}:{state_key}\"")
-    }
-
-    fn create_element(&self, tag_name: &str, attrs: Vec<(&str, String)>) -> NodeRef {
-        NodeRef::new_element(
-            QualName::new(None, ns!(html), LocalName::from(tag_name)),
-            attrs
-                .iter()
-                .map(|attr| {
-                    (
-                        ExpandedName::new("", attr.0.to_owned()),
-                        Attribute {
-                            prefix: None,
-                            value: attr.1.to_owned(),
-                        },
-                    )
-                })
-                .collect::<Vec<_>>(),
-        )
     }
 
     fn insert_state_inputs(&mut self, dom: &NodeRef) -> Result<(), String> {
@@ -241,20 +179,16 @@ impl ECSMParser {
                 match prev {
                     Some(prev_state) => {
                         let string_key = state_key.to_string();
-                        if !prev_state.keys.contains(&string_key) {
-                            prev_state.keys.push(string_key);
-                        }
+                        prev_state.add_key(string_key);
                     }
-                    None => self.selection.push(SelectionState {
-                        name: state_name.to_owned(),
-                        keys: vec![state_key.to_owned()],
-                    }),
+                    None => self.selection.push(SelectionState::new(
+                        state_name.to_owned(),
+                        vec![state_key.to_owned()],
+                    )),
                 }
             } else {
                 if !self.boolean.iter().any(|s| s.name == state_name) {
-                    self.boolean.push(BooleanState {
-                        name: state_name.to_owned(),
-                    })
+                    self.boolean.push(BooleanState::new(state_name.to_owned()))
                 }
             }
 

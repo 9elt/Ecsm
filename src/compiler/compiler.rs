@@ -1,4 +1,4 @@
-use crate::{config::ECSMConfig, parser::ECSMParser};
+use crate::{config::ECSMConfig, html_editor::ECSMHtmlEditor};
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Result;
@@ -23,7 +23,7 @@ use walkdir::WalkDir;
 
 pub struct ECSMCompiler {
     config: ECSMConfig,
-    parser: ECSMParser,
+    html_editor: ECSMHtmlEditor,
     // states: States,
 }
 
@@ -31,7 +31,7 @@ impl ECSMCompiler {
     pub fn new(config: &ECSMConfig) -> Self {
         let mut compiler = Self {
             config: config.to_owned(),
-            parser: ECSMParser::new(),
+            html_editor: ECSMHtmlEditor::new(),
             // states: States {
             //     boolean: vec![],
             //     selection: vec![],
@@ -82,18 +82,18 @@ impl ECSMCompiler {
 
         print!(" >");
 
-        self.parser.reset();
+        self.html_editor.reset();
 
-        match self.parser.parse_html(&path) {
+        match self.html_editor.compile(&path) {
             Ok(()) => print!("\x1b[32m\x1b[1m compiled\x1b[0m"),
             Err(err) => print!("\x1b[31m\x1b[1m {err}\x1b[0m"),
         };
 
         print!(" >");
 
-        let output_path = self.source_path_to_output(path);
+        let output_path = self.get_output_path(path);
 
-        match self.parser.current() {
+        match &self.html_editor.current {
             Some(html) => {
                 match html.serialize_to_file(output_path) {
                     Ok(_) => print!("\x1b[32m\x1b[1m serialized\x1b[0m\n"),
@@ -111,24 +111,23 @@ impl ECSMCompiler {
         );
 
         print!(" \x1b[32m\x1b[1mok\x1b[0m\n");
-        //print!(" \x1b[31m\x1b[1merror\x1b[0m\n");
     }
 
-    fn source_path_to_output(&mut self, path: PathBuf) -> PathBuf {
+    fn get_output_path(&mut self, src_path: PathBuf) -> PathBuf {
         PathBuf::from(
-            path.to_str()
+            src_path.to_str()
                 .unwrap_or("none")
                 .replace(self.config.source_dir(), self.config.output_dir()),
         )
     }
 
     pub fn remove_file(&mut self, path: PathBuf) -> Result<()> {
-        fs::remove_file(self.source_path_to_output(path))
+        fs::remove_file(self.get_output_path(path))
         // remove connected states... to do...
     }
 
     pub fn remove_dir(&mut self, path: PathBuf) -> Result<()> {
-        fs::remove_dir_all(self.source_path_to_output(path))
+        fs::remove_dir_all(self.get_output_path(path))
         // remove connected states... to do...
     }
 }

@@ -1,5 +1,5 @@
 mod compiler;
-mod parser;
+mod html_editor;
 mod setup;
 mod utils;
 mod config;
