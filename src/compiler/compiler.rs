@@ -5,26 +5,26 @@ use std::io::Result;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-struct BooleanState {
-    name: String,
-    files: Vec<PathBuf>,
-}
+// struct BooleanState {
+//     name: String,
+//     files: Vec<PathBuf>,
+// }
 
-struct SelectionState {
-    name: String,
-    keys: Vec<String>,
-    files: Vec<PathBuf>,
-}
+// struct SelectionState {
+//     name: String,
+//     keys: Vec<String>,
+//     files: Vec<PathBuf>,
+// }
 
-struct States {
-    boolean: Vec<BooleanState>,
-    selection: Vec<SelectionState>,
-}
+// struct States {
+//     boolean: Vec<BooleanState>,
+//     selection: Vec<SelectionState>,
+// }
 
 pub struct ECSMCompiler {
     config: ECSMConfig,
     parser: ECSMParser,
-    states: States,
+    // states: States,
 }
 
 impl ECSMCompiler {
@@ -32,10 +32,10 @@ impl ECSMCompiler {
         let mut compiler = Self {
             config: config.to_owned(),
             parser: ECSMParser::new(),
-            states: States {
-                boolean: vec![],
-                selection: vec![],
-            },
+            // states: States {
+            //     boolean: vec![],
+            //     selection: vec![],
+            // },
         };
 
         compiler.compile_source_files().ok();
@@ -76,16 +76,32 @@ impl ECSMCompiler {
 
     fn compile_html(&mut self, path: PathBuf) {
         print!(
-            "\x1b[33m\x1b[1mcompiling\x1b[0m -> \x1b[1m{:?}\x1b[0m",
+            "\x1b[1m{:?}\x1b[0m",
             path.file_name().unwrap_or(OsStr::new("missing filename"))
         );
 
+        print!(" >");
+
         self.parser.reset();
+
         match self.parser.parse_html(&path) {
-            Ok(()) => print!(" \x1b[32m\x1b[1mok\x1b[0m\n"),
-            Err(err) => print!(" \x1b[31m\x1b[1m{err}\x1b[0m\n"),
+            Ok(()) => print!("\x1b[32m\x1b[1m compiled\x1b[0m"),
+            Err(err) => print!("\x1b[31m\x1b[1m {err}\x1b[0m"),
         };
-        // print!(" \x1b[31m\x1b[1merror\x1b[0m\n");
+
+        print!(" >");
+
+        let output_path = self.source_path_to_output(path);
+
+        match self.parser.current() {
+            Some(html) => {
+                match html.serialize_to_file(output_path) {
+                    Ok(_) => print!("\x1b[32m\x1b[1m serialized\x1b[0m\n"),
+                    Err(_) => print!("\x1b[31m\x1b[1m serialization failed\x1b[0m\n"),
+                };
+            }
+            None => print!("\x1b[31m\x1b[1m failed loading dom\x1b[0m\n"),
+        }
     }
 
     fn compile_css(&mut self, path: PathBuf) {

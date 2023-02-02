@@ -5,8 +5,14 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 
-use html5ever::{interface::QualName, local_name, namespace_url, ns};
+use html5ever::{interface::QualName, namespace_url, ns, LocalName};
 use kuchiki::{Attribute, ExpandedName};
+
+const STATE_CLASS: &str = "ECSM-state";
+const BOOLEAN_STATE_TYPE: &str = "checkbox";
+const SELECTION_STATE_TYPE: &str = "radio";
+
+const STATE_HANDLER_CLASS: &str = "ECSM-state-handler";
 
 const STATE_ATTR: &str = "handle_state";
 const STATE_ATTR_SELECTOR: &str = "[handle_state]";
@@ -29,6 +35,7 @@ pub struct SelectionState {
 pub struct ECSMParser {
     boolean: Vec<BooleanState>,
     selection: Vec<SelectionState>,
+    current: Option<NodeRef>,
 }
 
 impl ECSMParser {
@@ -36,7 +43,12 @@ impl ECSMParser {
         Self {
             boolean: vec![],
             selection: vec![],
+            current: None
         }
+    }
+
+    pub fn current(&self) -> Option<NodeRef> {
+        self.current.to_owned()
     }
 
     pub fn reset(&mut self) {
@@ -56,14 +68,31 @@ impl ECSMParser {
         };
 
         let dom = parse_html().one(html_str);
-        match self.borrow_mut().parse_state(&dom) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
+
+        let mut parser_errors = "".to_string();
+
+        match self.borrow_mut().parse_state_hanlders(&dom) {
+            Ok(_) => (),
+            Err(err) => parser_errors = err,
+        };
+
+        match self.borrow_mut().insert_state_inputs(&dom) {
+            Ok(_) => (),
+            Err(err) => parser_errors = err,
+        };
+
+        self.current = Some(dom);
+
+        match parser_errors == "" {
+            true => Ok(()),
+            false => Err(parser_errors)
         }
 
-        // println!("\nstates -> {:?}", states);
-        // println!("\nstates -> {:?}", self.selection);
+        // let _states = self.borrow_mut().parse_state_hanlders(&dom);
+        // let _insert = self.borrow_mut().insert_state_inputs(&dom);
+        // // println!("\nstates -> {:?}", self.selection);
         // println!("\nhtml ->\n{}\n", dom.to_string());
+        // Ok(())
     }
 
     fn boolean_state_id(&self, state_name: &str) -> String {
@@ -78,13 +107,79 @@ impl ECSMParser {
         format!("reserved keyword \"{state_key}\" ~ {STATE_ATTR}=\"{state_name}:{state_key}\"")
     }
 
-    fn parse_state(&mut self, dom: &NodeRef) -> Result<u16, String> {
+    fn create_element(&self, tag_name: &str, attrs: Vec<(&str, String)>) -> NodeRef {
+        NodeRef::new_element(
+            QualName::new(None, ns!(html), LocalName::from(tag_name)),
+            attrs
+                .iter()
+                .map(|attr| {
+                    (
+                        ExpandedName::new("", attr.0.to_owned()),
+                        Attribute {
+                            prefix: None,
+                            value: attr.1.to_owned(),
+                        },
+                    )
+                })
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    fn insert_state_inputs(&mut self, dom: &NodeRef) -> Result<(), String> {
+        let body = match dom.select("body") {
+            Ok(v) => match v.last() {
+                Some(v) => v,
+                None => return Err("missing body".to_string()),
+            },
+            Err(_) => return Err("missing body".to_string()),
+        };
+
+        for state in self.boolean.iter() {
+            let input = self.create_element(
+                "input",
+                vec![
+                    ("class", STATE_CLASS.to_string()),
+                    ("id", self.boolean_state_id(state.name.as_str())),
+                    ("type", BOOLEAN_STATE_TYPE.to_string()),
+                ],
+            );
+
+            body.as_node().prepend(input);
+        }
+
+        for state in self.selection.iter() {
+            for key in state.keys.iter() {
+                let input = self.create_element(
+                    "input",
+                    vec![
+                        ("class", STATE_CLASS.to_string()),
+                        ("id", self.selection_state_id(state.name.as_str(), key)),
+                        ("type", SELECTION_STATE_TYPE.to_string()),
+                        (
+                            "checked",
+                            match key == SELECTION_DEFAULT_KEY {
+                                true => "true",
+                                false => "false",
+                            }
+                            .to_string(),
+                        ),
+                    ],
+                );
+
+                body.as_node().prepend(input);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn parse_state_hanlders(&mut self, dom: &NodeRef) -> Result<u16, String> {
         let parsed_states = match dom.select(STATE_ATTR_SELECTOR) {
             Ok(parsed) => parsed,
             Err(_) => return Ok(0),
         };
 
-        let mut errors= "".to_string();
+        let mut errors = "".to_string();
 
         let mut attr_values = vec![];
 
@@ -113,26 +208,15 @@ impl ECSMParser {
                 continue;
             }
 
-            let _is_default = state_key == SELECTION_DEFAULT_KEY;
-
-            let label = NodeRef::new_element(
-                QualName::new(None, ns!(html), local_name!("label")),
+            let label = self.create_element(
+                "label",
                 vec![
+                    ("class", STATE_HANDLER_CLASS.to_string()),
                     (
-                        ExpandedName::new("", "class"),
-                        Attribute {
-                            prefix: None,
-                            value: "ECSM-state-handler".to_owned(),
-                        },
-                    ),
-                    (
-                        ExpandedName::new("", "for"),
-                        Attribute {
-                            prefix: None,
-                            value: match is_selection {
-                                true => self.selection_state_id(state_name, state_key),
-                                false => self.boolean_state_id(state_name),
-                            },
+                        "for",
+                        match is_selection {
+                            true => self.selection_state_id(state_name, state_key),
+                            false => self.boolean_state_id(state_name),
                         },
                     ),
                 ],
