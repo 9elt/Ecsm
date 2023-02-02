@@ -1,0 +1,17 @@
+/*
+
+ECSM | [EmptyProjectInit] project
+
+boolean states usage:
+
+state_name:active .targeted_class {
+    ...css style
+}
+
+selection states usage:
+
+sel_state_name:key_name .targeted_class {
+    ...css style
+}
+
+*/

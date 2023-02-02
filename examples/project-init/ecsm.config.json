@@ -1,0 +1,8 @@
+{
+  "name": "EmptyProjectInit",
+  "dir": {
+    "source": "src",
+    "output": ".output",
+    "media": "public"
+  }
+}
