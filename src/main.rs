@@ -1,8 +1,10 @@
 mod compiler;
+mod config;
 mod html_editor;
+mod observer;
+mod server;
 mod setup;
 mod utils;
-mod config;
 
 use config::ECSMConfig;
 
@@ -25,9 +27,9 @@ fn main() {
         Err(err) => panic!("direcotries check failed: {:?}", err),
     };
 
-    // start auto compiler
-    match compiler::start(&config) {
+    // start live compiler and dev server
+    match observer::start(&config) {
         Ok(_) => (),
-        Err(err) => panic!("failed starting compiler: {:?}", err), 
+        Err(err) => panic!("failed starting compiler: {:?}", err),
     };
 }

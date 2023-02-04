@@ -14,14 +14,25 @@ struct Directories {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
+struct Server {
+    port: i32,
+    host: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ECSMConfig {
     name: String,
     dir: Directories,
+    server: Server
 }
 
 impl ECSMConfig {
     pub fn name(&self) -> &String {
         &self.name
+    }
+
+    pub fn server(&self) -> String {
+        format!("{}:{}", self.server.host, self.server.port)
     }
 
     pub fn source_dir(&self) -> &String {
@@ -102,6 +113,10 @@ impl ECSMConfig {
                 output: ".output".to_string(),
                 media: "public".to_string(),
             },
+            server: Server {
+                port: 8080,
+                host: "localhost".to_string(),
+            }
         };
 
         let json_config = serde_json::to_string_pretty(&config)?;
