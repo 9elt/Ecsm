@@ -2,33 +2,39 @@ mod html;
 
 use crate::config::ECSMConfig;
 use crate::utils::logger;
+use html::states::{BooleanState, SelectionState};
 use html::ECSMHtmlCompiler;
+use html::consts::STATE_CLASS;
 
-use std::ffi::OsStr;
 use std::fs;
-use std::io::Result;
+use std::fs::File;
+use std::io::{Read, Result};
 use std::path::PathBuf;
 use walkdir::WalkDir;
-// struct BooleanState {
-//     name: String,
-//     files: Vec<PathBuf>,
-// }
 
-// struct SelectionState {
-//     name: String,
-//     keys: Vec<String>,
-//     files: Vec<PathBuf>,
-// }
+#[derive(Debug)]
+pub struct HtmlFile {
+    pub boolean: Vec<BooleanState>,
+    pub selection: Vec<SelectionState>,
+    pub path: PathBuf,
+    pub has_changed: bool,
+}
 
-// struct States {
-//     boolean: Vec<BooleanState>,
-//     selection: Vec<SelectionState>,
-// }
+impl HtmlFile {
+    pub fn from(html_compiler: &ECSMHtmlCompiler, path: PathBuf) -> Self {
+        Self {
+            boolean: html_compiler.boolean.to_owned(),
+            selection: html_compiler.selection.to_owned(),
+            path,
+            has_changed: true,
+        }
+    }
+}
 
 pub struct ECSMCompiler {
     config: ECSMConfig,
     html_compiler: ECSMHtmlCompiler,
-    // states: States,
+    html_files: Vec<HtmlFile>, // states: States,
 }
 
 impl ECSMCompiler {
@@ -36,10 +42,7 @@ impl ECSMCompiler {
         let mut compiler = Self {
             config: config.to_owned(),
             html_compiler: ECSMHtmlCompiler::new(),
-            // states: States {
-            //     boolean: vec![],
-            //     selection: vec![],
-            // },
+            html_files: vec![],
         };
 
         compiler.compile_source_files().ok();
@@ -51,9 +54,17 @@ impl ECSMCompiler {
         &self.config
     }
 
+    pub fn generate_ecsm_css(&self) -> Result<()> {
+        let path = self.config.output_path()?.join("css");
+        self.check_directory(&path).ok();
+        fs::write(path.join("ecsm.css"), format!(".{STATE_CLASS}{{ display: none !important }}")).ok();
+        Ok(())
+    }
+
     pub fn compile_source_files(&mut self) -> Result<()> {
         self.compile_files_in(&self.config.source_path()?, "html")?;
-        self.compile_files_in(&self.config.source_path()?, "css")?;
+        self.generate_ecsm_css().ok();
+        // self.compile_files_in(&self.config.source_path()?, "css")?;
         Ok(())
     }
 
@@ -67,6 +78,10 @@ impl ECSMCompiler {
             }
         }
         Ok(())
+    }
+
+    pub fn compile_global_css(&mut self) -> Result<()> {
+        self.compile_files_in(&self.config.source_path()?.join("css"), "css")
     }
 
     pub fn compile_file(&mut self, path: PathBuf, target_ext: &str) -> Result<()> {
@@ -99,6 +114,15 @@ impl ECSMCompiler {
         Ok(())
     }
 
+    fn push_html_file(&mut self, path: PathBuf) {
+        match self.html_files.iter_mut().find(|f| f.path == path) {
+            Some(html_file) => *html_file = HtmlFile::from(&self.html_compiler, path),
+            None => self
+                .html_files
+                .push(HtmlFile::from(&self.html_compiler, path)),
+        }
+    }
+
     fn compile_html(&mut self, path: PathBuf) {
         logger::path_from_src(&path, &self.config);
         logger::arrow();
@@ -107,7 +131,7 @@ impl ECSMCompiler {
 
         match self.html_compiler.compile(&path) {
             Ok(()) => logger::success("compiled"),
-            Err(err) => logger::error(err),
+            Err(err) => logger::warning(err),
         };
 
         logger::arrow();
@@ -127,25 +151,92 @@ impl ECSMCompiler {
 
         logger::flush();
 
-        // // compile global css files
+        self.push_html_file(path.to_owned());
 
-        // let rel_css_dir = match &path.parent() {
-        //     Some(dir) => dir.to_path_buf().join("css"),
-        //     None => return (),
-        // };
+        if let Some(dir) = path.parent() {
+            self.compile_files_in(&dir.to_path_buf(), "css").ok();
+        }
 
-        // // compile related css files
-        // self.compile_files_in(&rel_css_dir, "css");
+        self.compile_global_css().ok();
+    }
+
+    fn replace_css(&self, css: &mut String, name: &String, key: &String, id: &String) {
+        // spaced
+        {
+            let raw = format!("{}:{} ", name, key);
+            let compiled = format!("#{}:checked~* ", id);
+
+            *css = css.replace(&raw, &compiled);
+        }
+        // not spaced
+        {
+            let raw = format!("{}:{}", name, key);
+            let compiled = format!("#{}:checked~", id);
+
+            *css = css.replace(&raw, &compiled);
+        }
     }
 
     fn compile_css(&mut self, path: PathBuf) {
-        print!(
-            "\x1b[33m\x1b[1mcompiling\x1b[0m > \x1b[1m{:?}\x1b[0m",
-            path.file_name().unwrap_or(OsStr::new("missing filename"))
-        );
+        logger::path_from_src(&path, &self.config);
+        logger::arrow();
 
-        print!("\n");
-        // print!(" \x1b[32m\x1b[1mok\x1b[0m\n");
+        let mut css_file = match File::open(path.to_owned()) {
+            Ok(file) => file,
+            Err(_) => return logger::error("failed opening file"),
+        };
+
+        let mut css = String::new();
+
+        match css_file.read_to_string(&mut css) {
+            Ok(_) => (),
+            Err(_) => return logger::error("failed reading file"),
+        };
+
+        let global_css_dir = self.config.source_path().unwrap().join("css");
+        let is_global_css = path.starts_with(&global_css_dir);
+
+        let rel_html_files = match is_global_css {
+            false => self
+                .html_files
+                .iter()
+                .filter(|f| match f.path.parent() {
+                    Some(dir) => path.starts_with(dir),
+                    None => false,
+                })
+                .collect::<Vec<_>>(),
+            true => self.html_files.iter().collect::<Vec<_>>(),
+        };
+
+        for f in rel_html_files {
+            for boolean_state in f.boolean.iter() {
+                let name = &boolean_state.name;
+                let id = self.html_compiler.boolean_state_id(name);
+
+                self.replace_css(&mut css, name, &"active".to_string(), &id);
+            }
+            for selection_state in f.selection.iter() {
+                let name = &selection_state.name;
+                for key in selection_state.keys.iter() {
+                    let id = self.html_compiler.selection_state_id(name, key);
+
+                    self.replace_css(&mut css, name, key, &id);
+                }
+            }
+        }
+
+        logger::success("compiled");
+        logger::arrow();
+
+        let output_path = self.get_output_path(&path);
+        self.check_directory(&output_path).ok();
+
+        match fs::write(output_path, css) {
+            Ok(_) => logger::success("serialized"),
+            Err(_) => logger::error("serialization failed"),
+        };
+
+        logger::flush();
     }
 
     fn get_output_path(&mut self, src_path: &PathBuf) -> PathBuf {

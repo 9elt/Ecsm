@@ -1,5 +1,5 @@
-mod consts;
-mod states;
+pub mod consts;
+pub mod states;
 mod utils;
 
 use consts::*;
@@ -55,12 +55,35 @@ impl ECSMHtmlCompiler {
             Err(err) => parser_errors = err,
         };
 
+        self.borrow_mut().insert_style(&dom).ok();
+
         self.current = Some(dom);
 
         match parser_errors == "" {
             true => Ok(()),
             false => Err(parser_errors),
         }
+    }
+
+    fn insert_style(&mut self, dom: &NodeRef) -> Result<(), String> {
+        let head = match dom.select("head") {
+            Ok(v) => match v.last() {
+                Some(v) => v,
+                None => return Err("missing head".to_string()),
+            },
+            Err(_) => return Err("missing head".to_string()),
+        };
+
+        let s = self.create_element(
+            "link",
+            vec![
+                ("rel", "stylesheet".to_string()),
+                ("href", "/css/ecsm.css".to_string()),
+            ],
+        );
+
+        head.as_node().append(s);
+        Ok(())
     }
 
     fn insert_state_inputs(&mut self, dom: &NodeRef) -> Result<(), String> {
@@ -92,6 +115,7 @@ impl ECSMHtmlCompiler {
                     vec![
                         ("class", STATE_CLASS.to_string()),
                         ("id", self.selection_state_id(state.name.as_str(), key)),
+                        ("name", self.selection_state_id(state.name.as_str(), "")),
                         ("type", SELECTION_STATE_TYPE.to_string()),
                         (
                             "checked",

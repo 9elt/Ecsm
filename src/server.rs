@@ -22,8 +22,19 @@ pub fn create(config: &ECSMConfig) -> Result<(JoinHandle<()>, Sender<()>)> {
             false => request_url,
         }));
 
-        match File::open(res_path) {
-            Ok(file) => Response::from_file("text/html; charset=utf8", file).with_status_code(200),
+        match File::open(res_path.to_owned()) {
+            Ok(file) => {
+                let mime = match &res_path.extension() {
+                    Some(ext) => match ext.to_string_lossy().as_ref() {
+                        "html" => "text/html; charset=utf8",
+                        "css" => "text/css",
+                        _ => "text/html; charset=utf8",
+                    },
+                    None => "text/html; charset=utf8",
+                };
+
+                Response::from_file(mime, file).with_status_code(200)
+            }
             Err(_) => Response::html("404 error.").with_status_code(404),
         }
     })

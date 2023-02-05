@@ -10,7 +10,11 @@ impl ECSMHtmlCompiler {
     }
 
     pub fn selection_state_id(&self, state_name: &str, state_key: &str) -> String {
-        format!("ECSM-selection-ID-{state_name}-KEY-{state_key}")
+        if state_key == "" {
+            format!("ECSM-selection-ID-{state_name}")
+        } else {
+            format!("ECSM-selection-ID-{state_name}-KEY-{state_key}")
+        }
     }
 
     pub fn reserved_key_error(&self, state_name: &str, state_key: &str) -> String {
