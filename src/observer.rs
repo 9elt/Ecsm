@@ -56,8 +56,8 @@ fn observer_router(events: Vec<DebouncedEvent>, compiler: &mut ECSMCompiler) {
         }
 
         match event.path.is_dir() {
-            true => compiler.compile_files_in(&event.path),
-            false => compiler.compile_file(event.path),
+            true => compiler.compile_files_in(&event.path, "*"),
+            false => compiler.compile_file(event.path, "*"),
         }
         .ok();
     }

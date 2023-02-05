@@ -1,10 +1,10 @@
 use super::consts::*;
-use super::ECSMHtmlEditor;
+use super::ECSMHtmlCompiler;
 
 use html5ever::{interface::QualName, namespace_url, ns, LocalName};
 use kuchiki::{Attribute, ExpandedName, NodeRef};
 
-impl ECSMHtmlEditor {
+impl ECSMHtmlCompiler {
     pub fn boolean_state_id(&self, state_name: &str) -> String {
         format!("ECSM-boolean-ID-{state_name}")
     }

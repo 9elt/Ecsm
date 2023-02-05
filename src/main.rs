@@ -1,6 +1,5 @@
 mod compiler;
 mod config;
-mod html_editor;
 mod observer;
 mod server;
 mod setup;

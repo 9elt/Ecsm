@@ -10,13 +10,13 @@ use kuchiki::{parse_html, ExpandedName, NodeRef};
 use std::{borrow::BorrowMut, fs::File, io::Read, path::PathBuf};
 
 #[derive(Debug, Clone)]
-pub struct ECSMHtmlEditor {
+pub struct ECSMHtmlCompiler {
     pub boolean: Vec<BooleanState>,
     pub selection: Vec<SelectionState>,
     pub current: Option<NodeRef>,
 }
 
-impl ECSMHtmlEditor {
+impl ECSMHtmlCompiler {
     pub fn new() -> Self {
         Self {
             boolean: vec![],
