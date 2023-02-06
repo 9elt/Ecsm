@@ -4,22 +4,24 @@ use std::fs::{self, File};
 use std::io::{self, prelude::*, Result};
 use std::path::PathBuf;
 
+use crate::utils::logger;
+
 const CONFIG_NAME: &str = "ecsm.config.json";
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct Directories {
     source: String,
     output: String,
     media: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct Server {
     port: i32,
     host: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ECSMConfig {
     name: String,
     dir: Directories,
@@ -94,7 +96,7 @@ impl ECSMConfig {
     }
 
     pub fn new() -> Result<Self> {
-        print!("\ncreate a new project | \x1b[33m\x1b[1mname\x1b[0m: ");
+        logger::create_project();
 
         io::Write::flush(&mut io::stdout()).ok();
         io::stdout().flush().ok();

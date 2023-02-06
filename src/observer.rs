@@ -1,3 +1,5 @@
+use crate::utils::logger;
+
 use super::compiler::ECSMCompiler;
 use super::config::ECSMConfig;
 use super::server;
@@ -6,19 +8,13 @@ use notify_debouncer_mini::{new_debouncer, DebouncedEvent};
 use std::time::Duration;
 
 pub fn start(config: &ECSMConfig) -> Result<()> {
-    println!(
-        "\nstarting \x1b[33m\x1b[1m[{}]\x1b[0m live compiler\n",
-        config.name()
-    );
+    logger::running_compiler(config.name());
 
     let mut compiler = ECSMCompiler::new(config);
 
-    println!(
-        "\nstarting \x1b[33m\x1b[1m[{}]\x1b[0m development server on \x1b[33m\x1b[1mhttp://{}\x1b[0m\n",
-        config.name(), config.server()
-    );
+    logger::running_server(config.name(), &config.server());
 
-    server::create(config).expect("error creating dev server");
+    server::run(config).expect("error creating dev server");
 
     observe(&mut compiler).expect("error starting live compiler");
 
@@ -37,7 +33,7 @@ pub fn observe(compiler: &mut ECSMCompiler) -> Result<()> {
     for res in rx {
         match res {
             Ok(event) => observer_router(event, compiler),
-            Err(e) => println!("watch error: {:?}", e),
+            Err(e) => println!("observer error: {:?}", e),
         }
     }
 
