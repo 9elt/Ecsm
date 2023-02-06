@@ -34,6 +34,10 @@ output
 
     <p handle_state="test">click here</p>
 
+    <p handle_state="onemore:akey">click here</p>
+
+    <p handle_state="onemore:default">click here</p>
+
     <p class="content">hello</p>
 
   </div>
@@ -54,9 +58,30 @@ output
     type="checkbox"
   />
 
+  <input
+    class="ECSM-state"
+    id="ECSM-selection-ID-onemore-KEY-akey"
+    type="radio"
+  />
+
+  <input
+    class="ECSM-state"
+    id="ECSM-selection-ID-onemore-KEY-default"
+    type="radio"
+    checked
+  />
+
   <div>
 
     <label for="ECSM-boolean-ID-test">
+      <p>click here</p>
+    </label>
+
+    <label for="ECSM-selection-ID-onemore-KEY-akey">
+      <p>click here</p>
+    </label>
+
+    <label for="ECSM-selection-ID-onemore-KEY-default">
       <p>click here</p>
     </label>
 
@@ -98,7 +123,15 @@ output
 
 ```css
 test:active .content {
-  color: #f00
+  color: #F00
+}
+
+onemore:akey .content {
+  color: #FFF
+}
+
+onemore:default .content {
+  color: #000
 }
 ```
 
@@ -109,7 +142,15 @@ test:active .content {
 
 ```css
 #ECSM-boolean-ID-test:checked~* .content {
-  color: #f00
+  color: #F00
+}
+
+#ECSM-selection-ID-onemore-KEY-akey:checked~* .content {
+  color: #FFF
+}
+
+#ECSM-selection-ID-onemore-KEY-default:checked~* .content {
+  color: #000
 }
 ```
 
