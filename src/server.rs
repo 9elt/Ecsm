@@ -30,19 +30,23 @@ pub fn run(config: &ECSMConfig) -> Result<(JoinHandle<()>, Sender<()>)> {
             _ => media_path.join(&request_url),
         };
 
+        if !request_path.starts_with(&output_path) && !request_path.starts_with(&media_path) {
+            return Response::html("<h2>403 FORBIDDEN</h2>").with_status_code(404);
+        }
+
         let request_path = match request_path.is_dir() {
             true => request_path.join("index.html"),
             false => request_path,
         };
 
+        if !request_path.exists() {
+            return Response::html("<h2>404 NOT FOUND</h2>").with_status_code(404);
+        }
+
         let mime = match request_path.extension() {
             Some(ext) => rouille::extension_to_mime(ext.to_string_lossy().as_ref()),
             None => return Response::html("<h2>500 SERVER ERROR</h2>").with_status_code(404),
         };
-
-        if !request_path.exists() {
-            return Response::html("<h2>404 NOT FOUND</h2>").with_status_code(404);
-        }
 
         match File::open(request_path.to_owned()) {
             Ok(file) => Response::from_file(mime, file).with_status_code(200),
