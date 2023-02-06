@@ -1,7 +1,6 @@
 # ECSM
 
-> This project is under development,
-a proof of concept: [Ecsm-py](https://github.com/9elt/Ecsm-py)
+> This project is under development
 
 A tool to easily manage state in html and css only websites
 
@@ -32,8 +31,11 @@ output
 <body>
 
   <div>
-    <h1 handle_state="test">click here</h1>
+
+    <p handle_state="test">click here</p>
+
     <p class="content">hello</p>
+
   </div>
 
 </body>
@@ -48,15 +50,18 @@ output
 
   <input
     class="ECSM-state"
-    id="ECSM-bool-ID_test"
+    id="ECSM-boolean-ID-test"
     type="checkbox"
   />
 
   <div>
-    <label for="ECSM-bool-ID_test">
-      <h1>click here</h1>
+
+    <label for="ECSM-boolean-ID-test">
+      <p>click here</p>
     </label>
+
     <p class="content">hello</p>
+
   </div>
 
 </body>
@@ -103,9 +108,7 @@ test:active .content {
 
 
 ```css
-.ECSM-state { display: none !important }
-
-#ECSM-bool-ID_test:checked~* .content {
+#ECSM-boolean-ID-test:checked~* .content {
   color: #f00
 }
 ```
