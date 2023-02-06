@@ -32,11 +32,17 @@ output
 
   <div>
 
-    <p handle_state="test">click here</p>
+    <p handle_state="test">
+      click here
+    </p>
 
-    <p handle_state="onemore:akey">click here</p>
+    <p handle_state="onemore:akey">
+      click here
+    </p>
 
-    <p handle_state="onemore:default">click here</p>
+    <p handle_state="onemore:default">
+      click here
+    </p>
 
     <p class="content">hello</p>
 
