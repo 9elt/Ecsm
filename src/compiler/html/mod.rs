@@ -9,24 +9,30 @@ use kuchiki::traits::TendrilSink;
 use kuchiki::{parse_html, ExpandedName, NodeRef};
 use std::{borrow::BorrowMut, fs::File, io::Read, path::PathBuf};
 
+use crate::config::ECSMConfig;
+
 #[derive(Debug, Clone)]
 pub struct ECSMHtmlCompiler {
     pub boolean: Vec<BooleanState>,
     pub selection: Vec<SelectionState>,
     pub current: Option<NodeRef>,
+    pub css_files: Vec<PathBuf>,
+    pub config: ECSMConfig,
 }
 
 impl ECSMHtmlCompiler {
-    pub fn new() -> Self {
+    pub fn new(config: ECSMConfig) -> Self {
         Self {
             boolean: vec![],
             selection: vec![],
             current: None,
+            css_files: vec![],
+            config,
         }
     }
 
     pub fn reset(&mut self) {
-        *self = Self::new()
+        *self = Self::new(self.config.to_owned())
     }
 
     pub fn compile(&mut self, path: &PathBuf) -> Result<(), String> {
@@ -55,6 +61,8 @@ impl ECSMHtmlCompiler {
             Err(err) => parser_errors = err,
         };
 
+        self.borrow_mut().parse_css_files(&dom).ok();
+
         self.borrow_mut().insert_style(&dom).ok();
 
         self.current = Some(dom);
@@ -63,6 +71,43 @@ impl ECSMHtmlCompiler {
             true => Ok(()),
             false => Err(parser_errors),
         }
+    }
+
+    fn parse_css_files(&mut self, dom: &NodeRef) -> Result<(), String> {
+        let head = match dom.select("head") {
+            Ok(v) => match v.last() {
+                Some(v) => v,
+                None => return Err("missing head".to_string()),
+            },
+            Err(_) => return Err("missing head".to_string()),
+        };
+
+        let stylesheets = match head.as_node().select("link[rel=\"stylesheet\"]") {
+            Ok(stylesheets) => stylesheets,
+            Err(_) => return Err("missing stylesheets".to_string()),
+        };
+
+        for stylesheet in stylesheets {
+            let mut clean = stylesheet.attributes.clone().into_inner();
+            let target = ExpandedName::new("", "href");
+            let mut attr_value = match clean.map.borrow_mut().remove(&target) {
+                Some(v) => v.value.to_owned(),
+                None => continue,
+            };
+
+            if attr_value.chars().next() == "/".chars().next() {
+                attr_value.remove(0);
+            }
+
+            let css_path = match self.config.source_path() {
+                Ok(path) => path.join(attr_value),
+                Err(_) => return Err("missing src path".to_string()),
+            };
+
+            self.css_files.push(css_path)
+        }
+
+        Ok(())
     }
 
     fn insert_style(&mut self, dom: &NodeRef) -> Result<(), String> {

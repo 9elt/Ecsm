@@ -2,10 +2,11 @@ mod html;
 
 use crate::config::ECSMConfig;
 use crate::utils::logger;
+use html::consts::STATE_CLASS;
 use html::states::{BooleanState, SelectionState};
 use html::ECSMHtmlCompiler;
-use html::consts::STATE_CLASS;
 
+use std::borrow::BorrowMut;
 use std::fs;
 use std::fs::File;
 use std::io::{Read, Result};
@@ -17,7 +18,7 @@ pub struct HtmlFile {
     pub boolean: Vec<BooleanState>,
     pub selection: Vec<SelectionState>,
     pub path: PathBuf,
-    pub has_changed: bool,
+    pub css_files: Vec<PathBuf>,
 }
 
 impl HtmlFile {
@@ -26,7 +27,7 @@ impl HtmlFile {
             boolean: html_compiler.boolean.to_owned(),
             selection: html_compiler.selection.to_owned(),
             path,
-            has_changed: true,
+            css_files: html_compiler.css_files.to_owned(),
         }
     }
 }
@@ -41,7 +42,7 @@ impl ECSMCompiler {
     pub fn new(config: &ECSMConfig) -> Self {
         let mut compiler = Self {
             config: config.to_owned(),
-            html_compiler: ECSMHtmlCompiler::new(),
+            html_compiler: ECSMHtmlCompiler::new(config.to_owned()),
             html_files: vec![],
         };
 
@@ -54,17 +55,21 @@ impl ECSMCompiler {
         &self.config
     }
 
-    pub fn generate_ecsm_css(&self) -> Result<()> {
+    pub fn create_ecsm_css(&self) -> Result<()> {
         let path = self.config.output_path()?.join("css");
         self.check_directory(&path).ok();
-        fs::write(path.join("ecsm.css"), format!(".{STATE_CLASS}{{ display: none !important }}")).ok();
+
+        fs::write(
+            path.join("ecsm.css"),
+            format!(".{STATE_CLASS}{{ display: none !important }}"),
+        )
+        .ok();
         Ok(())
     }
 
     pub fn compile_source_files(&mut self) -> Result<()> {
         self.compile_files_in(&self.config.source_path()?, "html")?;
-        self.generate_ecsm_css().ok();
-        // self.compile_files_in(&self.config.source_path()?, "css")?;
+        self.create_ecsm_css().ok();
         Ok(())
     }
 
@@ -78,10 +83,6 @@ impl ECSMCompiler {
             }
         }
         Ok(())
-    }
-
-    pub fn compile_global_css(&mut self) -> Result<()> {
-        self.compile_files_in(&self.config.source_path()?.join("css"), "css")
     }
 
     pub fn compile_file(&mut self, path: PathBuf, target_ext: &str) -> Result<()> {
@@ -103,17 +104,6 @@ impl ECSMCompiler {
         Ok(())
     }
 
-    fn check_directory(&self, path: &PathBuf) -> Result<()> {
-        if !path.exists() {
-            fs::create_dir_all(match path.is_dir() {
-                true => path,
-                false => path.parent().unwrap(),
-            })?;
-        }
-
-        Ok(())
-    }
-
     fn push_html_file(&mut self, path: PathBuf) {
         match self.html_files.iter_mut().find(|f| f.path == path) {
             Some(html_file) => *html_file = HtmlFile::from(&self.html_compiler, path),
@@ -123,11 +113,15 @@ impl ECSMCompiler {
         }
     }
 
+    ///////////////////////////////////
+    // html compiler
+    ///////////////////////////////////
+
     fn compile_html(&mut self, path: PathBuf) {
         logger::path_from_src(&path, &self.config);
         logger::arrow();
 
-        self.html_compiler.reset();
+        self.html_compiler.borrow_mut().reset();
 
         match self.html_compiler.compile(&path) {
             Ok(()) => logger::success("compiled"),
@@ -153,12 +147,14 @@ impl ECSMCompiler {
 
         self.push_html_file(path.to_owned());
 
-        if let Some(dir) = path.parent() {
-            self.compile_files_in(&dir.to_path_buf(), "css").ok();
+        for css in self.html_compiler.css_files.to_owned() {
+            self.compile_file(css, "css").ok();
         }
-
-        self.compile_global_css().ok();
     }
+
+    ///////////////////////////////////
+    // css compiler
+    ///////////////////////////////////
 
     fn replace_css(&self, css: &mut String, name: &String, key: &String, id: &String) {
         // spaced
@@ -177,38 +173,39 @@ impl ECSMCompiler {
         }
     }
 
-    fn compile_css(&mut self, path: PathBuf) {
+    fn compile_css(&self, path: PathBuf) {
         logger::path_from_src(&path, &self.config);
         logger::arrow();
 
         let mut css_file = match File::open(path.to_owned()) {
             Ok(file) => file,
-            Err(_) => return logger::error("failed opening file"),
+            Err(_) => {
+                return {
+                    logger::error("failed opening file");
+                    logger::flush();
+                }
+            }
         };
 
         let mut css = String::new();
 
         match css_file.read_to_string(&mut css) {
             Ok(_) => (),
-            Err(_) => return logger::error("failed reading file"),
+            Err(_) => {
+                return {
+                    logger::error("failed reading file");
+                    logger::flush();
+                }
+            }
         };
 
-        let global_css_dir = self.config.source_path().unwrap().join("css");
-        let is_global_css = path.starts_with(&global_css_dir);
+        let rel_html = self
+            .html_files
+            .iter()
+            .filter(|f| f.css_files.contains(&path))
+            .collect::<Vec<_>>();
 
-        let rel_html_files = match is_global_css {
-            false => self
-                .html_files
-                .iter()
-                .filter(|f| match f.path.parent() {
-                    Some(dir) => path.starts_with(dir),
-                    None => false,
-                })
-                .collect::<Vec<_>>(),
-            true => self.html_files.iter().collect::<Vec<_>>(),
-        };
-
-        for f in rel_html_files {
+        for f in rel_html {
             for boolean_state in f.boolean.iter() {
                 let name = &boolean_state.name;
                 let id = self.html_compiler.boolean_state_id(name);
@@ -239,7 +236,11 @@ impl ECSMCompiler {
         logger::flush();
     }
 
-    fn get_output_path(&mut self, src_path: &PathBuf) -> PathBuf {
+    ///////////////////////////////////
+    // helpers
+    ///////////////////////////////////
+
+    fn get_output_path(&self, src_path: &PathBuf) -> PathBuf {
         PathBuf::from(
             src_path
                 .to_str()
@@ -248,13 +249,44 @@ impl ECSMCompiler {
         )
     }
 
+    fn check_directory(&self, path: &PathBuf) -> Result<()> {
+        if !path.exists() {
+            fs::create_dir_all(match path.is_dir() {
+                true => path,
+                false => path.parent().unwrap(),
+            })?;
+        }
+
+        Ok(())
+    }
+
+    ///////////////////////////////////
+    // remove states and files
+    ///////////////////////////////////
+
+    fn remove_html_state(&mut self, path: &PathBuf, is_dir: bool) {
+        match self.html_files.iter().position(|f| match is_dir {
+            true => f.path.starts_with(path),
+            false => &f.path == path,
+        }) {
+            Some(index) => {
+                self.html_files.remove(index);
+            }
+            None => (),
+        };
+    }
+
     pub fn remove_file(&mut self, path: PathBuf) -> Result<()> {
-        fs::remove_file(self.get_output_path(&path))
-        // remove connected states... to do...
+        fs::remove_file(self.get_output_path(&path))?;
+        self.remove_html_state(&path, false);
+
+        Ok(())
     }
 
     pub fn remove_dir(&mut self, path: PathBuf) -> Result<()> {
-        fs::remove_dir_all(self.get_output_path(&path))
-        // remove connected states... to do...
+        fs::remove_dir_all(self.get_output_path(&path))?;
+        self.remove_html_state(&path, true);
+
+        Ok(())
     }
 }
