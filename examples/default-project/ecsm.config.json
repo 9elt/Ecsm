@@ -1,0 +1,12 @@
+{
+  "name": "default_project",
+  "dir": {
+    "source": "src",
+    "output": ".output",
+    "media": "public"
+  },
+  "server": {
+    "port": 8080,
+    "host": "localhost"
+  }
+}

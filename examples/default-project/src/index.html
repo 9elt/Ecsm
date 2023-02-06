@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>default_project</title>
+
+    <!-- link stylesheets from your "src" directory -->
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body>
+
+    <div class="page-container">
+
+        <div>
+            <!-- this is toggable -->
+            <p class="btn" handle_state="boolean">toggle ligth (boolean)</p>
+        </div>
+
+        <div class="boolean-example">
+            <p>this is handled by the boolean state</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <div>
+            <!-- this is a selection -->
+            <p class="btn" handle_state="selection:light">ligth on (selection)</p>
+
+            <!-- this is selected by default, ":default" is key -->
+            <p class="btn" handle_state="selection:default">ligth off (selection)</p>
+        </div>
+
+        <div class="selection-example">
+            <p>this is handled by the selection state</p>
+        </div>
+
+    </div>
+
+</body>
+
+</html>    

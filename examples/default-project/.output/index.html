@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>default_project</title>
+
+    <!-- link stylesheets from your "src" directory -->
+    <link href="/css/main.css" rel="stylesheet">
+<link href="/css/ecsm.css" rel="stylesheet"></head>
+
+<body><input checked="true" class="ECSM-state" id="ECSM-selection-ID-selection-KEY-default" name="ECSM-selection-ID-selection" type="radio"><input checked="false" class="ECSM-state" id="ECSM-selection-ID-selection-KEY-light" name="ECSM-selection-ID-selection" type="radio"><input class="ECSM-state" id="ECSM-boolean-ID-boolean" type="checkbox">
+
+    <div class="page-container">
+
+        <div>
+            <!-- this is toggable -->
+            <label class="ECSM-state-handler" for="ECSM-boolean-ID-boolean"><p class="btn">toggle ligth (boolean)</p></label>
+        </div>
+
+        <div class="boolean-example">
+            <p>this is handled by the boolean state</p>
+        </div>
+
+        <div class="separator"></div>
+
+        <div>
+            <!-- this is a selection -->
+            <label class="ECSM-state-handler" for="ECSM-selection-ID-selection-KEY-light"><p class="btn">ligth on (selection)</p></label>
+
+            <!-- this is selected by default, ":default" is key -->
+            <label class="ECSM-state-handler" for="ECSM-selection-ID-selection-KEY-default"><p class="btn">ligth off (selection)</p></label>
+        </div>
+
+        <div class="selection-example">
+            <p>this is handled by the selection state</p>
+        </div>
+
+    </div>
+
+
+
+    
+</body></html>
