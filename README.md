@@ -1,8 +1,7 @@
 # ECSM
-
 > This project is under development
 
-A tool to easily manage state in html and css only websites
+A framework to make the development of html and css only websites easy.
 
 ### html
 
@@ -26,21 +25,12 @@ output
 <tr>
 <td>
 
-
 ```html
 <body>
 
   <div>
 
     <p handle_state="test">
-      click here
-    </p>
-
-    <p handle_state="onemore:akey">
-      click here
-    </p>
-
-    <p handle_state="onemore:default">
       click here
     </p>
 
@@ -64,30 +54,9 @@ output
     type="checkbox"
   />
 
-  <input
-    class="ECSM-state"
-    id="ECSM-selection-ID-onemore-KEY-akey"
-    type="radio"
-  />
-
-  <input
-    class="ECSM-state"
-    id="ECSM-selection-ID-onemore-KEY-default"
-    type="radio"
-    checked
-  />
-
   <div>
 
     <label for="ECSM-boolean-ID-test">
-      <p>click here</p>
-    </label>
-
-    <label for="ECSM-selection-ID-onemore-KEY-akey">
-      <p>click here</p>
-    </label>
-
-    <label for="ECSM-selection-ID-onemore-KEY-default">
       <p>click here</p>
     </label>
 
@@ -126,18 +95,9 @@ output
 <tr>
 <td>
 
-
 ```css
 test:active .content {
   color: #F00
-}
-
-onemore:akey .content {
-  color: #FFF
-}
-
-onemore:default .content {
-  color: #000
 }
 ```
 
@@ -145,18 +105,9 @@ onemore:default .content {
 
 <td>
 
-
 ```css
 #ECSM-boolean-ID-test:checked~* .content {
   color: #F00
-}
-
-#ECSM-selection-ID-onemore-KEY-akey:checked~* .content {
-  color: #FFF
-}
-
-#ECSM-selection-ID-onemore-KEY-default:checked~* .content {
-  color: #000
 }
 ```
 
