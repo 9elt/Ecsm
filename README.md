@@ -43,7 +43,7 @@ output
 
 </td>
 
-<td width="50">
+<td>
 
 ```html
 <body>
